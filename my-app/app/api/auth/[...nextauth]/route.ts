@@ -1,13 +1,11 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
-import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcrypt"
-
-const prisma = new PrismaClient()
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";  // ✅ Import shared Prisma instance
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
 
 const handler = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma),  // ✅ Use shared Prisma instance
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -17,54 +15,34 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          return null;
         }
 
         const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        })
+          where: { email: credentials.email },
+        });
 
-        if (!user || !user.password) {
-          return null
-        }
+        if (!user || !user.password) return null;
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isPasswordValid) return null;
 
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        }
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/login",
-  },
+  session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-      }
-      return token
+      if (user) token.id = user.id;
+      return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-      }
-      return session
+      if (session.user) session.user.id = token.id as string;
+      return session;
     },
   },
-})
+});
 
-export { handler as GET, handler as POST }
-
+export { handler as GET, handler as POST };
