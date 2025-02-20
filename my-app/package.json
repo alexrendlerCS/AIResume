@@ -6,8 +6,13 @@
     "dev": "next dev",
     "build": "npx prisma generate && next build",
     "start": "next start",
-    "postinstall": "npx prisma generate",
+    "postinstall": "npm install --legacy-peer-deps && prisma generate",
     "lint": "next lint"
+  },
+  "resolutions": {
+    "eslint": "8.57.0",
+    "@typescript-eslint/eslint-plugin": "8.24.1",
+    "@typescript-eslint/parser": "8.24.1"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.12",
